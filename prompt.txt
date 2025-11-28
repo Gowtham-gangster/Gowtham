@@ -1,0 +1,510 @@
+PHASE 0 – PREP & REPO UNDERSTANDING
+
+Clone & run the existing app
+
+git clone <repo-url>
+
+npm install / yarn
+
+npm run dev / npm start
+
+Confirm:
+
+Existing routes work
+
+Current reminders / medicines / history (whatever exists) behave correctly.
+
+Map the architecture
+
+Identify:
+
+Pages: e.g. src/pages/…
+
+Components: src/components/…
+
+State/store: e.g. src/store/… or src/state/… (Zustand/Redux/etc.)
+
+Services/API layer: src/services/…
+
+Types: src/types/… or inline types.
+
+Draw a quick note (even on paper) of:
+
+How medicines, schedules, dose logs, users are currently represented.
+
+Where side-effects (reminders, notifications) are triggered.
+
+Create a work branch
+
+git checkout -b feature/smart-upgrades
+
+You’ll commit each feature in small, focused commits.
+
+PHASE 1 – DATA MODELS & STATE PREP
+
+Extend TypeScript models (centrally)
+In the main types file (e.g. src/types/index.ts), extend or add:
+
+Notifications & email flags to User (or UserSettings):
+
+interface NotificationSettings {
+  doseReminderEmail: boolean;
+  missedDoseEmail: boolean;
+  refillWarningEmail: boolean;
+  orderEmail: boolean;
+}
+
+
+Dosage limits to medicine/schedule:
+
+interface Medicine {
+  // existing fields…
+  maxDosePerDay?: number;
+  maxDosePerIntake?: number;
+}
+
+
+Order model:
+
+interface OrderItem {
+  medicineId?: string;
+  name: string;
+  quantity: number;
+}
+
+interface Order {
+  id: string;
+  userId: string;
+  createdAt: string;
+  vendorName: string;
+  vendorWebsiteUrl: string;
+  externalOrderId?: string;
+  items: OrderItem[];
+  expectedDeliveryDate?: string;
+  notes?: string;
+}
+
+
+Extend global store / state
+
+Locate the global store (Zustand/Redux/etc.).
+
+Add:
+
+orders: Order[]
+
+notificationSettings: NotificationSettings
+
+Add actions:
+
+setNotificationSettings
+
+addOrder, updateOrder, deleteOrder
+
+Wire these to persistence (LocalStorage or API) in the same way other entities are persisted.
+
+PHASE 2 – EMAIL INTEGRATION
+
+Do this early, because other features (orders, missed doses, refills) will hook into it.
+
+Backend email service (if backend exists)
+
+In backend (e.g. /server/src/services/emailService.ts):
+
+Use nodemailer and env-based configuration.
+
+Implement:
+
+async function sendDoseReminderEmail(args: {...}) { /* full impl */ }
+async function sendMissedDoseAlertEmail(args: {...}) { /* full impl */ }
+async function sendRefillWarningEmail(args: {...}) { /* full impl */ }
+async function sendOrderNotificationEmail(args: {...}) { /* full impl */ }
+
+
+Add HTTP endpoints if needed:
+
+POST /api/notifications/dose-reminder
+
+POST /api/notifications/missed-dose
+
+POST /api/notifications/refill-warning
+
+POST /api/notifications/order
+
+Integrate into existing API router without breaking existing routes.
+
+Frontend email client service
+
+In src/services/emailClient.ts:
+
+Implement functions that call those endpoints:
+
+export async function sendDoseReminderEmailClient(payload) {
+  return fetch("/api/notifications/dose-reminder", { method: "POST", body: JSON.stringify(payload), headers: {...} });
+}
+// same for other email types
+
+
+Settings UI for email notifications
+
+Open existing Settings page or create /settings.
+
+Add a “Email Notifications” section with toggles bound to notificationSettings in global store:
+
+Dose reminders
+
+Missed dose alerts
+
+Refill warnings
+
+Order notifications
+
+On toggle change → setNotificationSettings(...) and persist.
+
+Hook emails into existing logic
+
+Find where dose reminders are computed/triggered (e.g. useTodayDoses or a reminder scheduler).
+
+When a dose becomes due AND notificationSettings.doseReminderEmail is true → call sendDoseReminderEmailClient.
+
+Find where doses are marked missed:
+
+Implement logic to count missed doses per medicine in last 7 days.
+
+If threshold exceeded AND notificationSettings.missedDoseEmail true → call sendMissedDoseAlertEmailClient (for patient and caregivers).
+
+Find where stock is evaluated (refill warning logic or create it):
+
+If stockCount < refillThreshold and notificationSettings.refillWarningEmail is true → call sendRefillWarningEmailClient.
+
+Later, after order creation (Phase 5), you’ll hook sendOrderNotificationEmailClient there.
+
+PHASE 3 – PRESCRIPTION SCANNING UPGRADE (OCR + PARSING)
+
+Create OCR service
+
+File: src/services/prescriptionOcr.ts
+
+Use tesseract.js (or whatever is already used).
+
+Implement:
+
+export async function extractPrescriptionText(file: File): Promise<string> {
+  // run Tesseract, return full text, handle errors
+}
+
+
+Implement text-to-structure parser
+
+In the same file:
+
+export function parsePrescriptionTextToStructuredData(text: string): ParsedPrescription[] {
+  // use regex + line parsing to detect:
+  // name, strength, frequency (1-0-1, OD, BD, TID, etc.), duration
+}
+
+
+ParsedPrescription might include:
+
+interface ParsedPrescription {
+  name: string;
+  strength?: string;
+  pattern?: string; // e.g. "1-0-1"
+  frequencyPerDay?: number;
+  durationDays?: number;
+}
+
+
+Integrate with upload UI
+
+Open prescription upload page/component (e.g. PrescriptionUpload.tsx).
+
+Replace/extend old mock parsing:
+
+On file upload:
+
+Show loading state.
+
+Call extractPrescriptionText(file).
+
+Call parsePrescriptionTextToStructuredData(text).
+
+Store the parsed list in component/state.
+
+Show a review table:
+
+Editable fields:
+
+Name, strength, frequency, duration, etc.
+
+Allow:
+
+Delete row
+
+Add new row manually
+
+Create medicines & schedules from parsed data
+
+On “Confirm & Save”:
+
+For each parsed row:
+
+Call store methods: addMedicine, then addSchedule using the parsed frequency/duration.
+
+Navigate to medicines/schedules view, verify entries appear correctly.
+
+Error handling
+
+If OCR fails:
+
+Show error message.
+
+Show manual entry form instead.
+
+Ensure no branch returns dummy/static prescriptions; everything must be either:
+
+Real OCR result, or
+
+Manual user input.
+
+PHASE 4 – DOSAGE VERIFICATION
+
+Extend forms with dosage limits
+
+In medicine creation/edit form:
+
+Add optional inputs for:
+
+maxDosePerDay
+
+maxDosePerIntake
+
+Bind them to the extended Medicine model and store.
+
+Schedule creation check
+
+In the schedule creation/edit component:
+
+When user inputs:
+
+dosePerIntake
+
+timesPerDay / every X hours
+
+Compute expected daily dose.
+
+Compare with maxDosePerDay and maxDosePerIntake (if set).
+
+If exceeded:
+
+Show warning modal:
+
+“Planned daily dose exceeds configured safe limit. Continue?”
+
+Require explicit Confirm before saving.
+
+Runtime verification when taking a dose
+
+When user taps “Mark as Taken”:
+
+Compute total dose taken for that medicine today from dose logs.
+
+If taking this dose exceeds maxDosePerDay:
+
+Show confirmation modal:
+
+“You already took X mg today; this will exceed your configured max. Proceed?”
+
+On confirm → log as usual.
+
+On cancel → do not log.
+
+Connect with scanned prescriptions
+
+When parsing patterns like 1-0-1, infer:
+
+frequencyPerDay = 2 (morning + night)
+
+Optionally set a suggested maxDosePerDay = frequencyPerDay * dosePerIntake if that fits your design.
+
+On review UI, let user adjust max values before final save.
+
+PHASE 5 – MEDICAL INVENTORY & ORDER TRACKING
+
+Store-level support for orders
+
+In global store:
+
+Implement:
+
+addOrder(order: Order)
+
+updateOrder(order: Order)
+
+deleteOrder(orderId: string)
+
+Ensure orders are persisted like other entities.
+
+Create /orders route & page
+
+Add route: /orders to React Router.
+
+Implement:
+
+OrdersListPage:
+
+Table/list of orders: date, vendor, external ID, item summary.
+
+Button: “New Order”.
+
+OrderDetailPage:
+
+Full order info + item list.
+
+Edit & Delete buttons.
+
+Order creation/edit UI
+
+Create OrderForm component:
+
+Fields:
+
+Vendor name
+
+Vendor website URL
+
+External order ID (optional)
+
+Items: name, quantity, optional medicine link (select from existing medicine list)
+
+Expected delivery date
+
+Notes
+
+On submit:
+
+If new:
+
+Generate id, createdAt, call addOrder.
+
+If editing:
+
+Call updateOrder.
+
+Integrate with medicine stock
+
+Centralize stock update logic in a helper/service:
+
+updateMedicineStock(medicineId, deltaQuantity)
+
+When order is created:
+
+For each item with medicineId:
+
+Call updateMedicineStock to increment stockCount.
+
+When order is edited:
+
+Adjust based on difference between old and new quantity.
+
+When order is deleted:
+
+Either:
+
+Do nothing (simpler).
+
+Or subtract previously added stock (if you want strict correctness).
+
+“Store order from website” text parsing
+
+In OrderForm, add textarea orderDetailsText.
+
+When user clicks “Parse items from text”:
+
+Use simple regex/string parsing to detect lines like:
+
+MedicineName - Qty: 30
+
+MedicineName x 10
+
+Convert those into pre-filled OrderItem rows in the form.
+
+User can still edit items manually.
+
+Order-related emails
+
+After successful order creation:
+
+If notificationSettings.orderEmail is true:
+
+Call sendOrderNotificationEmailClient.
+
+Include summary: vendor, date, number of items.
+
+PHASE 6 – INTEGRATION, TESTING & CLEANUP
+
+Cross-feature integration checks
+
+Ensure:
+
+Reminders still work.
+
+Dose logging still works.
+
+History pages still show correct data.
+
+New emails are only sent when settings allow.
+
+OCR/scan + manual entry both create valid medicines/schedules.
+
+Orders actually adjust stock.
+
+Refill alerts + refill emails fire when stock drops below threshold.
+
+Manual test scenarios (at least):
+
+New user → set email preferences → add medicine with max dose → create schedule → take doses → trigger warnings.
+
+Upload prescription image → OCR → edit fields → save → verify medicines, schedules, max dose appear correctly.
+
+Make stock low → verify refill indicator + refill email.
+
+Create order with linked medicines → stock increases → order email sent.
+
+Toggle email settings off → actions no longer trigger emails.
+
+Code cleanup
+
+Remove unused imports/variables.
+
+Ensure TypeScript has no errors.
+
+Ensure no “TODO”, “implement later”, or dummy code remains.
+
+Run:
+
+npm run lint (if available)
+
+npm run build
+
+Final run & sanity check
+
+npm run dev / npm start
+
+Navigate through:
+
+Dashboard
+
+Medicines
+
+Schedules
+
+Prescription upload
+
+History
+
+Orders
+
+Settings
+
+Confirm everything is responsive and consistent with existing Tailwind design.
