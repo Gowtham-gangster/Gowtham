@@ -17,9 +17,19 @@ export interface User {
     orderNotifications: boolean;
     emailEnabled: boolean;
   };
+  // Additional fields for demo data
+  age?: number;
+  phone?: string;
+  address?: string;
+  emergencyContact?: {
+    name: string;
+    phone: string;
+    relationship: string;
+  };
+  createdAt?: string;
 }
 
-export type MedicineForm = "tablet" | "capsule" | "liquid" | "injection" | "other";
+export type MedicineForm = "tablet" | "capsule" | "liquid" | "injection" | "inhaler" | "other";
 export type PillColor = "red" | "blue" | "green" | "yellow" | "purple" | "orange" | "pink" | "teal";
 
 export interface Medicine {
@@ -29,15 +39,30 @@ export interface Medicine {
   nickname?: string;
   strength: string;
   form: MedicineForm;
-  colorTag: PillColor;
+  colorTag?: PillColor;
   iconKey?: string;
-  stockCount: number;
-  refillThreshold: number;
+  stockCount?: number;
+  refillThreshold?: number;
   instructions?: string;
   createdAt: string;
+  updatedAt?: string;
+  // Additional fields for demo data
+  frequency?: {
+    type: FrequencyType;
+    timesPerDay?: number;
+    specificTimes?: string[];
+    interval?: number;
+    instructions?: string;
+  };
+  startDate?: string;
+  endDate?: string;
+  prescribedBy?: string;
+  refillsRemaining?: number;
+  quantity?: number;
+  sideEffects?: string[];
 }
 
-export type FrequencyType = "DAILY" | "WEEKDAYS" | "CUSTOM_DAYS" | "EVERY_X_DAYS" | "EVERY_X_HOURS";
+export type FrequencyType = "DAILY" | "WEEKDAYS" | "CUSTOM_DAYS" | "EVERY_X_DAYS" | "EVERY_X_HOURS" | "AS_NEEDED";
 
 export interface Schedule {
   id: string;

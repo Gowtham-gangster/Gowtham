@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useStore } from '@/store/useStore';
-import { mockLogin } from '@/services/api';
+import { localAuthService } from '@/services/local-auth-service';
 import { Pill, Loader2, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -21,12 +21,14 @@ export const Login = () => {
     setLoading(true);
 
     try {
-      const user = await mockLogin(email, password);
+      // Use local auth service
+      const user = await localAuthService.signIn(email, password);
       login(user);
       toast.success(`Welcome back, ${user.name}!`);
       navigate('/dashboard');
-    } catch (error) {
-      toast.error('Invalid credentials. Please try again.');
+    } catch (error: any) {
+      console.error('Login error:', error);
+      toast.error(error?.message || 'Invalid email or password');
     } finally {
       setLoading(false);
     }

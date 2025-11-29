@@ -4,6 +4,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useStore } from "@/store/useStore";
+import { useEffect } from "react";
+import { autoInitializeDemoData } from "@/services/demo-data-service";
+import { localAuthService } from "@/services/local-auth-service";
 
 // Pages
 import Landing from "./pages/Landing";
@@ -51,6 +54,20 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
 
 const App = () => {
   const elderlyMode = useStore((state) => state.elderlyMode);
+  const login = useStore((state) => state.login);
+  
+  // Restore session from local storage on app load
+  useEffect(() => {
+    const user = localAuthService.getCurrentUser();
+    if (user) {
+      login(user);
+    }
+  }, [login]);
+  
+  // Auto-initialize demo data on first load
+  useEffect(() => {
+    autoInitializeDemoData();
+  }, []);
   
   return (
     <QueryClientProvider client={queryClient}>

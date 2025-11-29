@@ -121,9 +121,9 @@ export const Dashboard = () => {
 
           <div className="card glass p-4 shadow-soft">
             <h3 className={cn('font-semibold mb-2', elderlyMode && 'text-lg')}>Video Consultation</h3>
-            <p className="text-muted-foreground mb-4">Start or join a secure video call with providers.</p>
+            <p className="text-muted-foreground mb-4">Book appointments with doctors and join video consultations.</p>
             <Link to="/video-consultation">
-              <Button className="gradient-primary">Start Video</Button>
+              <Button className="gradient-primary">Find a Doctor</Button>
             </Link>
           </div>
 

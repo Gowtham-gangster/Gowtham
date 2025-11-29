@@ -32,7 +32,7 @@ export const useVoiceReminder = () => {
   }, []);
 
   const speak = useCallback((text: string, options: VoiceReminderOptions = {}) => {
-    if (!isSupported || !user?.voiceRemindersEnabled) return;
+    if (!isSupported) return;
     
     // Cancel any ongoing speech
     window.speechSynthesis.cancel();
@@ -58,7 +58,45 @@ export const useVoiceReminder = () => {
     utterance.onerror = () => setIsSpeaking(false);
     
     window.speechSynthesis.speak(utterance);
-  }, [isSupported, voices, user?.voiceRemindersEnabled]);
+  }, [isSupported, voices]);
+
+  const speakWithVoice = useCallback((text: string, voiceId: string, options: VoiceReminderOptions = {}) => {
+    if (!isSupported) return;
+    
+    // Cancel any ongoing speech
+    window.speechSynthesis.cancel();
+    
+    const utterance = new SpeechSynthesisUtterance(text);
+    
+    // Set options
+    utterance.rate = options.rate ?? 1.0;
+    utterance.pitch = options.pitch ?? 1;
+    utterance.volume = options.volume ?? 1;
+    
+    // Find specific voice
+    const selectedVoice = voices.find(v => v.name === voiceId);
+    if (selectedVoice) {
+      utterance.voice = selectedVoice;
+    }
+    
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+    
+    window.speechSynthesis.speak(utterance);
+  }, [isSupported, voices]);
+
+  const pause = useCallback(() => {
+    if (isSupported && isSpeaking) {
+      window.speechSynthesis.pause();
+    }
+  }, [isSupported, isSpeaking]);
+
+  const resume = useCallback(() => {
+    if (isSupported) {
+      window.speechSynthesis.resume();
+    }
+  }, [isSupported]);
 
   const speakDoseReminder = useCallback((medicineName: string, dosage: string, time: string) => {
     const message = `It's ${time}. Time to take your ${medicineName}, ${dosage}.`;
@@ -107,11 +145,15 @@ export const useVoiceReminder = () => {
 
   return {
     speak,
+    speakWithVoice,
     speakDoseReminder,
     speakConfirmation,
     speakPrescription,
+    pause,
+    resume,
     cancel,
     isSpeaking,
-    isSupported
+    isSupported,
+    voices
   };
 };
