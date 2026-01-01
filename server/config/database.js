@@ -17,18 +17,21 @@ class Database {
    */
   async connect(retryCount = 0) {
     try {
-      this.pool = mysql.createPool({
-        host: process.env.DB_HOST || 'localhost',
-        port: parseInt(process.env.DB_PORT) || 3306,
-        user: process.env.DB_USER || 'root',
-        password: process.env.DB_PASSWORD,
-        database: process.env.DB_NAME || 'medreminder',
+      // Support both standard env vars and Railway's MySQL env vars
+      const dbConfig = {
+        host: process.env.MYSQLHOST || process.env.DB_HOST || 'localhost',
+        port: parseInt(process.env.MYSQLPORT || process.env.DB_PORT) || 3306,
+        user: process.env.MYSQLUSER || process.env.DB_USER || 'root',
+        password: process.env.MYSQLPASSWORD || process.env.DB_PASSWORD,
+        database: process.env.MYSQLDATABASE || process.env.DB_NAME || 'medreminder',
         waitForConnections: true,
         connectionLimit: 10,
         queueLimit: 0,
         enableKeepAlive: true,
         keepAliveInitialDelay: 0
-      });
+      };
+
+      this.pool = mysql.createPool(dbConfig);
 
       // Test the connection
       const connection = await this.pool.getConnection();
