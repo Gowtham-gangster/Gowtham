@@ -33,25 +33,40 @@ export const NotificationBell = () => {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="relative"
+          aria-label={unreadCount > 0 ? `Notifications: ${unreadCount} unread` : 'Notifications'}
+          aria-expanded={open}
+        >
           <Bell size={elderlyMode ? 24 : 20} />
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground text-xs rounded-full flex items-center justify-center animate-pulse-soft">
+            <span 
+              className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground text-xs rounded-full flex items-center justify-center animate-pulse-soft"
+              aria-label={`${unreadCount} unread notifications`}
+            >
               {unreadCount > 9 ? '9+' : unreadCount}
             </span>
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-0" align="end">
+      <PopoverContent 
+        className="w-80 p-0" 
+        align="end"
+        role="dialog"
+        aria-label="Notifications panel"
+      >
         <div className="p-4 border-b border-border">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold">Notifications</h3>
+            <h3 className="font-semibold" id="notifications-heading">Notifications</h3>
             {notifications.length > 0 && (
               <Button 
                 variant="ghost" 
                 size="sm" 
                 onClick={clearNotifications}
                 className="text-xs text-muted-foreground"
+                aria-label="Mark all notifications as read"
               >
                 Mark all read
               </Button>
@@ -59,11 +74,23 @@ export const NotificationBell = () => {
           </div>
         </div>
         
-        <div className="max-h-80 overflow-y-auto">
+        <div 
+          className="max-h-80 overflow-y-auto"
+          role="list"
+          aria-labelledby="notifications-heading"
+        >
           {notifications.length === 0 ? (
-            <div className="p-6 text-center text-muted-foreground">
-              <Bell className="mx-auto mb-2 opacity-50" size={32} />
-              <p>No notifications yet</p>
+            <div 
+              className="p-6 text-center"
+              role="status"
+            >
+              <div className="w-12 h-12 rounded-full bg-cyan-600/20 flex items-center justify-center mx-auto mb-3 text-cyan-400">
+                <Bell className="w-6 h-6" aria-hidden="true" />
+              </div>
+              <h4 className="font-semibold text-white mb-1">No notifications yet</h4>
+              <p className="text-sm text-gray-400">
+                You'll receive notifications for dose reminders and alerts
+              </p>
             </div>
           ) : (
             notifications.slice(0, 10).map((notification) => (
@@ -74,12 +101,14 @@ export const NotificationBell = () => {
                   !notification.read && 'bg-primary/5'
                 )}
                 onClick={() => markNotificationRead(notification.id)}
+                role="listitem"
+                aria-label={`${notification.read ? 'Read' : 'Unread'} notification: ${notification.message}`}
               >
                 <div className={cn(
                   'flex gap-3 p-2 rounded-lg border',
                   notificationTypeColors[notification.type]
                 )}>
-                  <span className="text-xl">
+                  <span className="text-xl" aria-hidden="true">
                     {notificationTypeIcons[notification.type]}
                   </span>
                   <div className="flex-1 min-w-0">

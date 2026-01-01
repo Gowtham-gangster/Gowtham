@@ -1,14 +1,12 @@
-import { ReactNode } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { ReactNode, useMemo } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useStore } from '@/store/useStore';
 import { 
   Home, 
   Pill, 
-  Calendar, 
   History, 
   Settings, 
-  Bell, 
   LogOut, 
   Users,
   FileText,
@@ -19,31 +17,82 @@ import {
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { EnhancedSidebar, NavItem } from './EnhancedSidebar';
+import { CollapsibleSidebar } from './CollapsibleSidebar';
+import { BottomNavigation } from './BottomNavigation';
+import { NavigationBadge } from '@/components/ui/navigation-badge';
 
 interface LayoutProps {
   children: ReactNode;
 }
 
-const patientNavItems = [
-  { path: '/dashboard', label: 'Dashboard', icon: Home },
-  { path: '/medicines', label: 'Medicines', icon: Pill },
-  { path: '/chronic-diseases', label: 'Chronic Diseases', icon: Activity },
-  { path: '/prescriptions', label: 'Prescriptions', icon: FileText },
-  { path: '/history', label: 'History', icon: History },
-  { path: '/settings', label: 'Settings', icon: Settings },
-];
-
-const caregiverNavItems = [
-  { path: '/dashboard', label: 'Dashboard', icon: Home },
-  { path: '/caregiver', label: 'Patients', icon: Users },
-  { path: '/settings', label: 'Settings', icon: Settings },
-];
-
 export const Layout = ({ children }: LayoutProps) => {
-  const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout, elderlyMode } = useStore();
+  const { user, logout, elderlyMode, medicines, notifications } = useStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Calculate badge counts
+  const unreadNotifications = notifications.filter(n => !n.read).length;
+  const lowStockMedicines = medicines.filter(m => 
+    m.stockCount !== undefined && m.stockCount < 10
+  ).length;
+  const missedDoses = notifications.filter(n => 
+    n.type === 'MISSED_DOSE' && !n.read
+  ).length;
+
+  // Define navigation items with badges
+  const patientNavItems: NavItem[] = useMemo(() => [
+    { 
+      path: '/dashboard', 
+      label: 'Dashboard', 
+      icon: Home,
+      badge: missedDoses > 0 ? { count: missedDoses, variant: 'urgent' as const } : undefined
+    },
+    { 
+      path: '/medicines', 
+      label: 'Medicines', 
+      icon: Pill,
+      badge: lowStockMedicines > 0 ? { count: lowStockMedicines, variant: 'default' as const } : undefined
+    },
+    { 
+      path: '/chronic-diseases', 
+      label: 'Chronic Diseases', 
+      icon: Activity 
+    },
+    { 
+      path: '/prescriptions', 
+      label: 'Prescriptions', 
+      icon: FileText 
+    },
+    { 
+      path: '/history', 
+      label: 'History', 
+      icon: History 
+    },
+    { 
+      path: '/settings', 
+      label: 'Settings', 
+      icon: Settings 
+    },
+  ], [missedDoses, lowStockMedicines]);
+
+  const caregiverNavItems: NavItem[] = useMemo(() => [
+    { 
+      path: '/dashboard', 
+      label: 'Dashboard', 
+      icon: Home 
+    },
+    { 
+      path: '/caregiver', 
+      label: 'Patients', 
+      icon: Users 
+    },
+    { 
+      path: '/settings', 
+      label: 'Settings', 
+      icon: Settings 
+    },
+  ], []);
 
   const navItems = user?.role === 'CAREGIVER' ? caregiverNavItems : patientNavItems;
 
@@ -54,8 +103,13 @@ export const Layout = ({ children }: LayoutProps) => {
 
   return (
     <div className={cn('min-h-screen bg-background', elderlyMode && 'elderly-mode')}>
+      {/* Skip to main content link for keyboard navigation */}
+      <a href="#main-content" className="skip-to-main">
+        Skip to main content
+      </a>
+      
       {/* Top Header */}
-      <header className="sticky top-0 z-50 glass border-b border-border">
+      <header className="sticky top-0 z-50 glass border-b border-border" role="banner">
         <div className="container flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-4">
             {/* Mobile menu button */}
@@ -64,6 +118,9 @@ export const Layout = ({ children }: LayoutProps) => {
               size="icon"
               className="lg:hidden"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-menu"
             >
               {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </Button>
@@ -89,58 +146,59 @@ export const Layout = ({ children }: LayoutProps) => {
       </header>
 
       <div className="flex">
-        {/* Sidebar - Desktop */}
-        <aside className="hidden lg:flex w-64 flex-col border-r border-border bg-card min-h-[calc(100vh-4rem)]">
-          <nav className="flex-1 p-4 space-y-2">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = location.pathname === item.path || 
-                              location.pathname.startsWith(item.path + '/');
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={cn(
-                    'flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200',
-                    isActive
-                      ? 'bg-primary text-primary-foreground shadow-soft'
-                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                  )}
-                >
-                  <Icon size={elderlyMode ? 24 : 20} />
-                  <span className={cn(elderlyMode && 'text-lg')}>{item.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
-        </aside>
+        {/* Enhanced Sidebar - Desktop (> 1024px) */}
+        <EnhancedSidebar 
+          navItems={navItems} 
+          elderlyMode={elderlyMode}
+        />
+
+        {/* Collapsible Sidebar - Tablet (768px - 1024px) */}
+        <CollapsibleSidebar 
+          navItems={navItems} 
+          elderlyMode={elderlyMode}
+        />
 
         {/* Mobile Menu Overlay */}
         {mobileMenuOpen && (
-          <div className="fixed inset-0 z-40 lg:hidden">
+          <div className="fixed inset-0 z-40 md:hidden">
             <div 
-              className="fixed inset-0 bg-foreground/20 backdrop-blur-sm"
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm"
               onClick={() => setMobileMenuOpen(false)}
+              aria-hidden="true"
             />
-            <aside className="fixed left-0 top-16 bottom-0 w-64 bg-card border-r border-border animate-slide-up">
+            <aside 
+              className="fixed left-0 top-16 bottom-0 w-64 bg-background-secondary border-r border-border/50 animate-slide-up shadow-[0_0_30px_rgba(139,92,246,0.3)]"
+              role="navigation"
+              aria-label="Mobile menu"
+              id="mobile-menu"
+            >
               <nav className="p-4 space-y-2">
                 {navItems.map((item) => {
                   const Icon = item.icon;
-                  const isActive = location.pathname === item.path;
                   return (
                     <Link
                       key={item.path}
                       to={item.path}
                       onClick={() => setMobileMenuOpen(false)}
+                      aria-label={item.badge && item.badge.count > 0 
+                        ? `${item.label} (${item.badge.count} ${item.badge.variant === 'urgent' ? 'urgent' : 'notifications'})`
+                        : item.label
+                      }
                       className={cn(
                         'flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200',
-                        isActive
-                          ? 'bg-primary text-primary-foreground'
-                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                        'text-gray-400 hover:bg-violet-600/10 hover:text-violet-300'
                       )}
                     >
                       <Icon size={elderlyMode ? 24 : 20} />
                       <span className={cn(elderlyMode && 'text-lg')}>{item.label}</span>
+                      {item.badge && item.badge.count > 0 && (
+                        <span className="ml-auto">
+                          <NavigationBadge
+                            count={item.badge.count}
+                            variant={item.badge.variant}
+                          />
+                        </span>
+                      )}
                     </Link>
                   );
                 })}
@@ -150,41 +208,22 @@ export const Layout = ({ children }: LayoutProps) => {
         )}
 
         {/* Main Content */}
-        <main className="flex-1 p-4 lg:p-6">
-          <div className="max-w-6xl mx-auto animate-fade-in">
+        <main id="main-content" className="flex-1 p-4 lg:p-6 xl:p-8" role="main" tabIndex={-1}>
+          <div className="max-w-7xl mx-auto animate-fade-in">
             {children}
           </div>
         </main>
       </div>
 
-      {/* Bottom Navigation - Mobile */}
-      <nav className="fixed bottom-0 left-0 right-0 lg:hidden bg-card border-t border-border z-50">
-        <div className="flex justify-around items-center h-16">
-          {navItems.slice(0, 5).map((item) => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.path || 
-                            location.pathname.startsWith(item.path + '/');
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={cn(
-                  'flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors',
-                  isActive
-                    ? 'text-primary'
-                    : 'text-muted-foreground'
-                )}
-              >
-                <Icon size={elderlyMode ? 28 : 22} />
-                <span className={cn('text-xs', elderlyMode && 'text-sm')}>{item.label}</span>
-              </Link>
-            );
-          })}
-        </div>
-      </nav>
+      {/* Bottom Navigation - Mobile (< 768px) */}
+      <BottomNavigation 
+        navItems={navItems} 
+        elderlyMode={elderlyMode}
+        maxItems={5}
+      />
 
-      {/* Spacer for bottom nav */}
-      <div className="h-16 lg:hidden" />
+      {/* Spacer for bottom nav on mobile */}
+      <div className={cn('md:hidden', elderlyMode ? 'h-20' : 'h-16')} />
     </div>
   );
 };

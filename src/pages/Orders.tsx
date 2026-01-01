@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
+import { OrdersEmptyState } from '@/components/orders/OrdersEmptyState';
 import { cn } from '@/lib/utils';
 import { PackagePlus, Trash2, Save, Edit, Plus } from 'lucide-react';
 import { toast } from 'sonner';
@@ -213,7 +214,7 @@ export const Orders = () => {
         ) : (
           <div className="space-y-4">
             {orders.length === 0 ? (
-              <Card className="shadow-soft"><CardContent className="p-6">No orders yet</CardContent></Card>
+              <OrdersEmptyState onCreateOrder={() => setEditing({ id: generateId(), userId: user?.id || '', vendor: { name: '' }, items: [], createdAt: new Date().toISOString(), delivery: { status: 'pending' } })} />
             ) : (
               orders.map((order) => (
                 <Card key={order.id} className="shadow-soft">

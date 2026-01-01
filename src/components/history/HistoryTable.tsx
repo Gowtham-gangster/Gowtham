@@ -1,10 +1,11 @@
 import { useState, useMemo } from 'react';
 import { useStore } from '@/store/useStore';
-import { DoseLog, DoseStatus } from '@/types';
+import { DoseStatus } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { SearchEmptyState } from '@/components/ui/search-empty-state';
+import { HistoryEmptyState } from '@/components/history/HistoryEmptyState';
 import {
   Select,
   SelectContent,
@@ -24,7 +25,7 @@ import { Badge } from '@/components/ui/badge';
 import { PillTag } from '@/components/ui/PillTag';
 import { cn } from '@/lib/utils';
 import { format, parseISO, isWithinInterval, subDays } from 'date-fns';
-import { Filter, Download } from 'lucide-react';
+import { Filter } from 'lucide-react';
 
 const statusColors: Record<DoseStatus, string> = {
   PENDING: 'bg-muted text-muted-foreground',
@@ -83,6 +84,11 @@ export const HistoryTable = () => {
     
     return { total, taken, missed, skipped, adherence };
   }, [filteredLogs]);
+
+  // Check if there are no dose logs at all
+  if (doseLogs.length === 0) {
+    return <HistoryEmptyState />;
+  }
 
   return (
     <div className="space-y-6">
@@ -192,33 +198,33 @@ export const HistoryTable = () => {
         
         <CardContent className="p-0">
           {filteredLogs.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground">
-              <p>No dose history found for the selected filters</p>
-            </div>
+            <SearchEmptyState
+              searchQuery={
+                selectedMedicine !== 'all' || selectedStatus !== 'all' || dateRange !== '7'
+                  ? `${selectedMedicine !== 'all' ? medicines.find(m => m.id === selectedMedicine)?.name || 'medicine' : ''} ${selectedStatus !== 'all' ? selectedStatus : ''} (${dateRange} days)`.trim()
+                  : 'your filters'
+              }
+              onClearSearch={() => {
+                setSelectedMedicine('all');
+                setSelectedStatus('all');
+                setDateRange('7');
+              }}
+              suggestions={
+                medicines.length > 0
+                  ? medicines.slice(0, 3).map(m => m.name)
+                  : []
+              }
+            />
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className={cn(elderlyMode && 'text-base')}>Date</TableHead>
-                    <TableHead className={cn(elderlyMode && 'text-base')}>Time</TableHead>
-                    <TableHead className={cn(elderlyMode && 'text-base')}>Medicine</TableHead>
-                    <TableHead className={cn(elderlyMode && 'text-base')}>Status</TableHead>
-                    <TableHead className={cn(elderlyMode && 'text-base')}>Notes</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredLogs.map((log) => {
-                    const medicine = getMedicine(log.medicineId);
-                    return (
-                      <TableRow key={log.id}>
-                        <TableCell className={cn(elderlyMode && 'text-base')}>
-                          {format(parseISO(log.scheduledTime), 'MMM d, yyyy')}
-                        </TableCell>
-                        <TableCell className={cn(elderlyMode && 'text-base')}>
-                          {format(parseISO(log.scheduledTime), 'h:mm a')}
-                        </TableCell>
-                        <TableCell>
+            <>
+              {/* Mobile Card View */}
+              <div className="md:hidden space-y-3 p-4">
+                {filteredLogs.map((log) => {
+                  const medicine = getMedicine(log.medicineId);
+                  return (
+                    <Card key={log.id} className="shadow-sm">
+                      <CardContent className="p-4 space-y-2">
+                        <div className="flex items-start justify-between">
                           <div className="flex items-center gap-2">
                             {medicine && (
                               <PillTag
@@ -228,28 +234,87 @@ export const HistoryTable = () => {
                                 size="sm"
                               />
                             )}
-                            <span className={cn(elderlyMode && 'text-base')}>
+                            <span className={cn('font-medium', elderlyMode && 'text-lg')}>
                               {medicine?.name || 'Unknown'}
                             </span>
                           </div>
-                        </TableCell>
-                        <TableCell>
                           <Badge className={cn(statusColors[log.status], elderlyMode && 'text-sm')}>
                             {log.status}
                           </Badge>
-                        </TableCell>
-                        <TableCell className={cn(
-                          'max-w-[200px] truncate text-muted-foreground',
-                          elderlyMode && 'text-base'
-                        )}>
-                          {log.notes || '-'}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
+                        </div>
+                        <div className="text-sm text-muted-foreground space-y-1">
+                          <p className={cn(elderlyMode && 'text-base')}>
+                            {format(parseISO(log.scheduledTime), 'MMM d, yyyy')} at{' '}
+                            {format(parseISO(log.scheduledTime), 'h:mm a')}
+                          </p>
+                          {log.notes && (
+                            <p className={cn('text-xs', elderlyMode && 'text-sm')}>
+                              Note: {log.notes}
+                            </p>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+              
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
+                <Table className="table-striped table-hover">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className={cn('table-header', elderlyMode && 'text-base')}>Date</TableHead>
+                      <TableHead className={cn('table-header', elderlyMode && 'text-base')}>Time</TableHead>
+                      <TableHead className={cn('table-header', elderlyMode && 'text-base')}>Medicine</TableHead>
+                      <TableHead className={cn('table-header', elderlyMode && 'text-base')}>Status</TableHead>
+                      <TableHead className={cn('table-header', elderlyMode && 'text-base')}>Notes</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredLogs.map((log) => {
+                      const medicine = getMedicine(log.medicineId);
+                      return (
+                        <TableRow key={log.id}>
+                          <TableCell className={cn('table-cell', elderlyMode && 'text-base')}>
+                            {format(parseISO(log.scheduledTime), 'MMM d, yyyy')}
+                          </TableCell>
+                          <TableCell className={cn('table-cell', elderlyMode && 'text-base')}>
+                            {format(parseISO(log.scheduledTime), 'h:mm a')}
+                          </TableCell>
+                          <TableCell className="table-cell">
+                            <div className="flex items-center gap-2">
+                              {medicine && (
+                                <PillTag
+                                  color={medicine.colorTag}
+                                  form={medicine.form}
+                                  name={medicine.name}
+                                  size="sm"
+                                />
+                              )}
+                              <span className={cn(elderlyMode && 'text-base')}>
+                                {medicine?.name || 'Unknown'}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="table-cell">
+                            <Badge className={cn(statusColors[log.status], elderlyMode && 'text-sm')}>
+                              {log.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className={cn(
+                            'table-cell max-w-[200px] truncate text-muted-foreground',
+                            elderlyMode && 'text-base'
+                          )}>
+                            {log.notes || '-'}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

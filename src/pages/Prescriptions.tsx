@@ -4,6 +4,7 @@ import { useStore } from '@/store/useStore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { PrescriptionsEmptyState } from '@/components/prescriptions/PrescriptionsEmptyState';
 import { cn } from '@/lib/utils';
 import { FileText, Upload, Calendar, ChevronRight, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
@@ -43,25 +44,7 @@ export const Prescriptions = () => {
 
         {/* Prescriptions List */}
         {prescriptions.length === 0 ? (
-          <Card className="shadow-soft">
-            <CardContent className="p-12 text-center">
-              <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-                <FileText size={40} className="text-muted-foreground" />
-              </div>
-              <h3 className={cn('text-lg font-semibold mb-2', elderlyMode && 'text-xl')}>
-                No prescriptions uploaded
-              </h3>
-              <p className={cn('text-muted-foreground mb-6 max-w-md mx-auto', elderlyMode && 'text-lg')}>
-                Upload a photo of your prescription to automatically extract medication details and create reminders.
-              </p>
-              <Link to="/prescriptions/upload">
-                <Button className="gradient-primary gap-2">
-                  <Upload size={18} />
-                  Upload Your First Prescription
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
+          <PrescriptionsEmptyState />
         ) : (
           <div className="space-y-4">
             {prescriptions.map((prescription) => {

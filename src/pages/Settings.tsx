@@ -58,7 +58,7 @@ export const Settings = () => {
 
   return (
     <Layout>
-      <div className="max-w-2xl mx-auto space-y-6">
+      <div className="max-w-2xl mx-auto space-y-6 px-4 md:px-0">
         <div>
           <h1 className={cn('text-2xl font-bold flex items-center gap-2', elderlyMode && 'text-3xl')}>
             <SettingsIcon size={elderlyMode ? 32 : 26} className="text-primary" />
@@ -78,7 +78,7 @@ export const Settings = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <div className="w-16 h-16 rounded-full gradient-primary flex items-center justify-center text-2xl font-bold text-primary-foreground">
                 {user?.name?.charAt(0).toUpperCase()}
               </div>
@@ -86,7 +86,7 @@ export const Settings = () => {
                 <p className={cn('font-semibold text-lg', elderlyMode && 'text-xl')}>
                   {user?.name}
                 </p>
-                <p className="text-muted-foreground">{user?.email}</p>
+                <p className="text-muted-foreground break-all">{user?.email}</p>
                 <p className="text-sm text-muted-foreground capitalize">
                   {user?.role?.toLowerCase()} account
                 </p>
@@ -110,7 +110,7 @@ export const Settings = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Input 
                   value={user.caregiverInviteCode} 
                   readOnly 
@@ -119,7 +119,7 @@ export const Settings = () => {
                 <Button 
                   onClick={handleCopyInviteCode}
                   variant="outline"
-                  className={cn(elderlyMode && 'h-14 px-6')}
+                  className={cn('w-full sm:w-auto', elderlyMode && 'h-14 px-6')}
                 >
                   {copied ? <Check size={20} /> : <Copy size={20} />}
                 </Button>

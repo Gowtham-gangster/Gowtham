@@ -3,8 +3,10 @@ import { useStore } from '@/store/useStore';
 import { getTodaysDoses } from '@/services/api';
 import { PillTag } from '@/components/ui/PillTag';
 import { Button } from '@/components/ui/button';
+import { ButtonEnhanced } from '@/components/ui/button-enhanced';
+import { CardEnhanced } from '@/components/ui/card-enhanced';
 import { cn } from '@/lib/utils';
-import { Check, Clock, X, SkipForward, Volume2 } from 'lucide-react';
+import { Check, Clock, X, SkipForward, Volume2, AlertCircle } from 'lucide-react';
 import { useVoiceReminder } from '@/hooks/useVoiceReminder';
 import { DoseActionModal } from './DoseActionModal';
 import { format } from 'date-fns';
@@ -151,149 +153,234 @@ export const TodayScheduleList = () => {
   if (todaysDoses.length === 0) {
     return (
       <div className="text-center py-12">
-        <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-          <Check className="text-muted-foreground" size={32} />
+        <div className="w-16 h-16 bg-violet-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Check className="text-violet-400" size={32} />
         </div>
-        <h3 className="text-lg font-medium mb-2">No medications scheduled for today</h3>
-        <p className="text-muted-foreground">Add medicines and schedules to get started</p>
+        <h3 className={cn('text-lg font-medium mb-2 text-white', elderlyMode && 'text-xl')}>
+          No medications scheduled for today
+        </h3>
+        <p className={cn('text-gray-400', elderlyMode && 'text-lg')}>
+          Add medicines and schedules to get started
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {Object.entries(groupedDoses).map(([period, doses]) => {
         if (doses.length === 0) return null;
 
         const periodInfo = periodLabels[period as keyof typeof periodLabels];
 
         return (
-          <div key={period} className="space-y-3">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span>{periodInfo.icon}</span>
-              <span className="font-medium">{periodInfo.label}</span>
-              <span className="text-xs">({periodInfo.time})</span>
+          <div key={period} className="relative">
+            {/* Timeline Period Header */}
+            <div className="flex items-center gap-3 mb-4">
+              <div className={cn(
+                'flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-600/20 border border-violet-500/30',
+                elderlyMode && 'px-5 py-3'
+              )}>
+                <span className={cn('text-2xl', elderlyMode && 'text-3xl')}>{periodInfo.icon}</span>
+                <div>
+                  <span className={cn('font-semibold text-white', elderlyMode && 'text-xl')}>
+                    {periodInfo.label}
+                  </span>
+                  <span className={cn('text-xs text-gray-400 ml-2', elderlyMode && 'text-sm')}>
+                    {periodInfo.time}
+                  </span>
+                </div>
+              </div>
+              <div className="flex-1 h-px bg-gradient-to-r from-violet-500/30 to-transparent" />
             </div>
 
-            <div className="space-y-2">
-              {doses.map((dose, index) => (
-                <div
-                  key={`${dose.medicine.id}-${dose.time}-${index}`}
-                  className={cn(
-                    'p-4 rounded-xl border-2 transition-all duration-200 shadow-soft',
-                    getStatusStyles(dose.status),
-                    elderlyMode && 'p-6'
-                  )}
-                >
-                  <div className="flex items-center gap-4">
-                    <PillTag
-                      color={dose.medicine.colorTag}
-                      form={dose.medicine.form}
-                      name={dose.medicine.name}
-                      size={elderlyMode ? 'lg' : 'md'}
-                    />
+            {/* Timeline Doses */}
+            <div className="space-y-3 pl-4 border-l-2 border-violet-500/30">
+              {doses.map((dose, index) => {
+                const isDueSoon = dose.status === 'PENDING' && (() => {
+                  const now = new Date();
+                  const [hours, minutes] = dose.time.split(':').map(Number);
+                  const doseTime = new Date();
+                  doseTime.setHours(hours, minutes, 0, 0);
+                  const diffMinutes = (doseTime.getTime() - now.getTime()) / (1000 * 60);
+                  return diffMinutes > 0 && diffMinutes <= 30;
+                })();
 
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h4 className={cn(
-                          'font-semibold truncate',
-                          elderlyMode && 'text-xl'
+                return (
+                  <div
+                    key={`${dose.medicine.id}-${dose.time}-${index}`}
+                    className="relative -ml-4 pl-8"
+                  >
+                    {/* Timeline Marker */}
+                    <div className={cn(
+                      'absolute left-0 top-6 w-4 h-4 rounded-full border-2 transition-all duration-300',
+                      dose.status === 'TAKEN' && 'bg-green-500 border-green-500 shadow-glow-success',
+                      dose.status === 'MISSED' && 'bg-red-500 border-red-500 shadow-glow-danger animate-pulse',
+                      dose.status === 'SKIPPED' && 'bg-gray-500 border-gray-500',
+                      dose.status === 'PENDING' && !isDueSoon && 'bg-violet-500 border-violet-500',
+                      dose.status === 'PENDING' && isDueSoon && 'bg-cyan-500 border-cyan-500 shadow-glow-cyan animate-pulse',
+                      elderlyMode && 'w-5 h-5'
+                    )} />
+
+                    {/* Medication Card */}
+                    <CardEnhanced
+                      variant={dose.status === 'MISSED' ? 'bordered' : 'glass'}
+                      padding="md"
+                      className={cn(
+                        'transition-all duration-300',
+                        dose.status === 'MISSED' && 'border-red-500/50 bg-red-500/10',
+                        isDueSoon && 'border-cyan-500/50 shadow-glow-cyan',
+                        elderlyMode && 'p-6'
+                      )}
+                    >
+                      <div className="flex items-center gap-4">
+                        {/* Time Badge */}
+                        <div className={cn(
+                          'flex flex-col items-center justify-center px-3 py-2 rounded-lg bg-background-secondary border border-white/10',
+                          elderlyMode && 'px-4 py-3'
                         )}>
-                          {dose.medicine.nickname || dose.medicine.name}
-                        </h4>
+                          <Clock 
+                            size={elderlyMode ? 24 : 18} 
+                            className={cn(
+                              'mb-1',
+                              dose.status === 'MISSED' && 'text-red-500',
+                              isDueSoon && 'text-cyan-500',
+                              dose.status === 'TAKEN' && 'text-green-500',
+                              dose.status === 'PENDING' && !isDueSoon && 'text-violet-400'
+                            )} 
+                          />
+                          <span className={cn(
+                            'text-sm font-semibold text-white',
+                            elderlyMode && 'text-base'
+                          )}>
+                            {format(new Date(`2000-01-01T${dose.time}`), 'h:mm')}
+                          </span>
+                          <span className={cn(
+                            'text-xs text-gray-400',
+                            elderlyMode && 'text-sm'
+                          )}>
+                            {format(new Date(`2000-01-01T${dose.time}`), 'a')}
+                          </span>
+                        </div>
+
+                        {/* Medicine Info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-2">
+                            <PillTag
+                              color={dose.medicine.colorTag}
+                              form={dose.medicine.form}
+                              name={dose.medicine.name}
+                              size={elderlyMode ? 'lg' : 'md'}
+                            />
+                            {dose.status === 'PENDING' && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className={cn('h-8 w-8', elderlyMode && 'h-10 w-10')}
+                                onClick={() => handleVoiceReminder(
+                                  dose.medicine.name,
+                                  dose.medicine.strength,
+                                  dose.time
+                                )}
+                              >
+                                <Volume2 size={elderlyMode ? 20 : 16} />
+                              </Button>
+                            )}
+                          </div>
+                          
+                          <h4 className={cn(
+                            'font-semibold text-white truncate',
+                            elderlyMode && 'text-xl'
+                          )}>
+                            {dose.medicine.nickname || dose.medicine.name}
+                          </h4>
+                          
+                          <p className={cn(
+                            'text-sm text-gray-400',
+                            elderlyMode && 'text-base'
+                          )}>
+                            {dose.medicine.strength} • {dose.schedule.dosageAmount} {dose.medicine.form}
+                            {dose.schedule.dosageAmount > 1 ? 's' : ''}
+                          </p>
+
+                          {/* Status Badge */}
+                          {dose.status !== 'PENDING' && (
+                            <div className="flex items-center gap-2 mt-2">
+                              <span className={cn(
+                                'inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium',
+                                dose.status === 'TAKEN' && 'bg-green-500/20 text-green-500',
+                                dose.status === 'MISSED' && 'bg-red-500/20 text-red-500',
+                                dose.status === 'SKIPPED' && 'bg-gray-500/20 text-gray-400',
+                                elderlyMode && 'text-sm px-3 py-1.5'
+                              )}>
+                                {dose.status === 'TAKEN' && <Check size={12} />}
+                                {dose.status === 'MISSED' && <AlertCircle size={12} />}
+                                {dose.status === 'SKIPPED' && <SkipForward size={12} />}
+                                {dose.status}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Due Soon Indicator */}
+                          {isDueSoon && (
+                            <div className="flex items-center gap-1 mt-2 text-cyan-500">
+                              <AlertCircle size={14} />
+                              <span className={cn('text-xs font-medium', elderlyMode && 'text-sm')}>
+                                Due soon
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Action Buttons */}
                         {dose.status === 'PENDING' && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => handleVoiceReminder(
+                          <div className="flex gap-2">
+                            <ButtonEnhanced
+                              variant="primary"
+                              size={elderlyMode ? 'lg' : 'md'}
+                              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:shadow-glow-success"
+                              leftIcon={<Check size={elderlyMode ? 24 : 18} />}
+                              onClick={() => handleTakeDose(
+                                dose.medicine.id,
+                                dose.medicine.name,
+                                dose.time
+                              )}
+                            >
+                              Take
+                            </ButtonEnhanced>
+                            <ButtonEnhanced
+                              variant="outline"
+                              size={elderlyMode ? 'lg' : 'md'}
+                              onClick={() => handleSkipDose(
+                                dose.medicine.id,
+                                dose.medicine.name,
+                                dose.time
+                              )}
+                            >
+                              <SkipForward size={elderlyMode ? 24 : 18} />
+                            </ButtonEnhanced>
+                          </div>
+                        )}
+
+                        {dose.status === 'MISSED' && (
+                          <ButtonEnhanced
+                            variant="danger"
+                            size={elderlyMode ? 'lg' : 'md'}
+                            leftIcon={<Check size={elderlyMode ? 24 : 18} />}
+                            onClick={() => handleTakeDose(
+                              dose.medicine.id,
                               dose.medicine.name,
-                              dose.medicine.strength,
                               dose.time
                             )}
                           >
-                            <Volume2 size={16} />
-                          </Button>
+                            Take Now
+                          </ButtonEnhanced>
                         )}
                       </div>
-                      <p className={cn(
-                        'text-sm text-muted-foreground',
-                        elderlyMode && 'text-base'
-                      )}>
-                        {dose.medicine.strength} • {dose.schedule.dosageAmount} {dose.medicine.form}
-                        {dose.schedule.dosageAmount > 1 ? 's' : ''}
-                      </p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Clock size={14} className="text-muted-foreground" />
-                        <span className={cn(
-                          'text-sm',
-                          elderlyMode && 'text-base'
-                        )}>
-                          {format(new Date(`2000-01-01T${dose.time}`), 'h:mm a')}
-                        </span>
-                        {dose.status !== 'PENDING' && (
-                          <span className={cn(
-                            'text-xs px-2 py-0.5 rounded-full font-medium',
-                            dose.status === 'TAKEN' && 'bg-success/20 text-success',
-                            dose.status === 'MISSED' && 'bg-destructive/20 text-destructive',
-                            dose.status === 'SKIPPED' && 'bg-muted text-muted-foreground'
-                          )}>
-                            {dose.status}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {dose.status === 'PENDING' && (
-                      <div className="flex gap-2">
-                        <Button
-                          variant="default"
-                          size={elderlyMode ? 'lg' : 'default'}
-                          className={cn(
-                            'gradient-success shadow-glow-success',
-                            elderlyMode && 'text-lg px-6'
-                          )}
-                          onClick={() => handleTakeDose(
-                            dose.medicine.id,
-                            dose.medicine.name,
-                            dose.time
-                          )}
-                        >
-                          <Check size={elderlyMode ? 24 : 18} className="mr-1" />
-                          Take
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size={elderlyMode ? 'lg' : 'default'}
-                          onClick={() => handleSkipDose(
-                            dose.medicine.id,
-                            dose.medicine.name,
-                            dose.time
-                          )}
-                        >
-                          <SkipForward size={elderlyMode ? 24 : 18} />
-                        </Button>
-                      </div>
-                    )}
-
-                    {dose.status === 'MISSED' && (
-                      <Button
-                        variant="outline"
-                        size={elderlyMode ? 'lg' : 'default'}
-                        className="border-destructive text-destructive hover:bg-destructive/10"
-                        onClick={() => handleTakeDose(
-                          dose.medicine.id,
-                          dose.medicine.name,
-                          dose.time
-                        )}
-                      >
-                        <Check size={elderlyMode ? 24 : 18} className="mr-1" />
-                        Take Now
-                      </Button>
-                    )}
+                    </CardEnhanced>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         );

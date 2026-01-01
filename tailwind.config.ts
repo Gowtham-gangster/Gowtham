@@ -15,6 +15,7 @@ export default {
     },
     extend: {
       colors: {
+        // Existing shadcn colors
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -76,6 +77,20 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        // Design system colors
+        'neon-cyan': '#00f5ff',
+        'neon-violet': '#8b5cf6',
+        'neon-magenta': '#ec4899',
+        'bg-primary': '#0a0a0f',
+        'bg-secondary': '#1a1a2e',
+        'bg-tertiary': '#16213e',
+        'text-primary': '#ffffff',
+        'text-secondary': '#a0a0b0',
+        'text-tertiary': '#6b7280',
+        // Background colors for design system
+        'background-primary': '#0a0a0f',
+        'background-secondary': '#1a1a2e',
+        'background-tertiary': '#16213e',
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -84,6 +99,40 @@ export default {
       },
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
+        mono: ["JetBrains Mono", "monospace"],
+      },
+      fontSize: {
+        'xs': '0.75rem',    // 12px
+        'sm': '0.875rem',   // 14px
+        'base': '1rem',     // 16px
+        'lg': '1.125rem',   // 18px
+        'xl': '1.25rem',    // 20px
+        '2xl': '1.5rem',    // 24px
+        '3xl': '2rem',      // 32px
+        '4xl': '2.5rem',    // 40px
+      },
+      lineHeight: {
+        'tight': '1.25',
+        'normal': '1.5',
+        'relaxed': '1.75',
+      },
+      spacing: {
+        'xs': '0.25rem',   // 4px
+        'sm': '0.5rem',    // 8px
+        'md': '1rem',      // 16px
+        'lg': '1.5rem',    // 24px
+        'xl': '2rem',      // 32px
+        '2xl': '3rem',     // 48px
+        '3xl': '4rem',     // 64px
+      },
+      boxShadow: {
+        'glow': '0 0 20px rgba(139, 92, 246, 0.5)',
+        'glow-cyan': '0 0 20px rgba(0, 245, 255, 0.5)',
+        'glow-magenta': '0 0 20px rgba(236, 72, 153, 0.5)',
+        'glow-success': '0 0 20px rgba(16, 185, 129, 0.5)',
+        'glow-danger': '0 0 20px rgba(239, 68, 68, 0.5)',
+        'glowCyan': '0 0 20px rgba(0, 245, 255, 0.5)',
+        'glowMagenta': '0 0 20px rgba(236, 72, 153, 0.5)',
       },
       keyframes: {
         "accordion-down": {
@@ -98,11 +147,26 @@ export default {
           "0%": { transform: "translateX(-100%)" },
           "100%": { transform: "translateX(100%)" },
         },
+        pulse: {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.5" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         shimmer: "shimmer 2s infinite",
+        pulse: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+      },
+      transitionDuration: {
+        'fast': '150ms',
+        'normal': '200ms',
+        'slow': '300ms',
+      },
+      transitionTimingFunction: {
+        'ease-in': 'cubic-bezier(0.4, 0, 1, 1)',
+        'ease-out': 'cubic-bezier(0, 0, 0.2, 1)',
+        'ease-in-out': 'cubic-bezier(0.4, 0, 0.2, 1)',
       },
     },
   },

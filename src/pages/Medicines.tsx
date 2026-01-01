@@ -1,10 +1,12 @@
 import { Link } from 'react-router-dom';
 import { Layout } from '@/components/layout/Layout';
 import { MedicineCard } from '@/components/medicines/MedicineCard';
+import { MedicinesEmptyState } from '@/components/medicines/MedicinesEmptyState';
+import { SearchEmptyState } from '@/components/ui/search-empty-state';
 import { useStore } from '@/store/useStore';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Plus, Pill, Search } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useState } from 'react';
 
@@ -69,27 +71,13 @@ export const Medicines = () => {
 
         {/* Medicine List */}
         {medicines.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-              <Pill size={40} className="text-muted-foreground" />
-            </div>
-            <h3 className={cn('text-lg font-semibold mb-2', elderlyMode && 'text-xl')}>
-              No medicines yet
-            </h3>
-            <p className={cn('text-muted-foreground mb-6 max-w-md mx-auto', elderlyMode && 'text-lg')}>
-              Add your medications to start tracking doses and get timely reminders.
-            </p>
-            <Link to="/medicines/new">
-              <Button className="gradient-primary gap-2">
-                <Plus size={18} />
-                Add Your First Medicine
-              </Button>
-            </Link>
-          </div>
+          <MedicinesEmptyState />
         ) : filteredMedicines.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">No medicines found matching "{search}"</p>
-          </div>
+          <SearchEmptyState
+            searchQuery={search}
+            onClearSearch={() => setSearch('')}
+            suggestions={medicines.slice(0, 3).map(m => m.name)}
+          />
         ) : (
           <div className="grid gap-4">
             {filteredMedicines.map((medicine) => (

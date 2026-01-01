@@ -14,9 +14,9 @@ describe('VoiceModulator', () => {
         fc.property(
           fc.record({
             voiceId: fc.string(),
-            rate: fc.float({ min: 0.1, max: 2.0 }),
-            pitch: fc.float({ min: -1.0, max: 1.0 }),
-            volume: fc.float({ min: 0, max: 1.0 })
+            rate: fc.float({ min: Math.fround(0.1), max: Math.fround(2.0), noNaN: true }),
+            pitch: fc.float({ min: Math.fround(-1.0), max: Math.fround(1.0), noNaN: true }),
+            volume: fc.float({ min: Math.fround(0), max: Math.fround(1.0), noNaN: true })
           }),
           fc.constantFrom('low', 'moderate', 'high'),
           fc.boolean(),
@@ -53,9 +53,9 @@ describe('VoiceModulator', () => {
         fc.property(
           fc.record({
             voiceId: fc.string(),
-            rate: fc.float({ min: 0.5, max: 1.5 }),
-            pitch: fc.float({ min: -0.5, max: 0.5 }),
-            volume: fc.float({ min: 0.5, max: 1.0 })
+            rate: fc.float({ min: Math.fround(0.5), max: Math.fround(1.5), noNaN: true }),
+            pitch: fc.float({ min: Math.fround(-0.5), max: Math.fround(0.5), noNaN: true }),
+            volume: fc.float({ min: Math.fround(0.5), max: Math.fround(1.0), noNaN: true })
           }),
           fc.array(
             fc.record({

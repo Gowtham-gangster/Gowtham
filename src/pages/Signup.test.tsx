@@ -163,7 +163,7 @@ describe('Signup Authentication Flow', () => {
     expect(passwordInput.required).toBe(true);
     expect(emailInput.type).toBe('email');
     expect(passwordInput.type).toBe('password');
-    expect(passwordInput.minLength).toBe(6);
+    // Note: minLength validation is now handled in JavaScript, not HTML attribute
   });
 
   it('should allow role selection between PATIENT and CAREGIVER', () => {
@@ -218,8 +218,6 @@ describe('Signup Authentication Flow', () => {
    * Validates: Requirements 7.4
    */
   it('should display "Password must be at least 6 characters" for weak password', async () => {
-    const { toast } = await import('sonner');
-
     render(
       <BrowserRouter>
         <Signup />
@@ -236,8 +234,9 @@ describe('Signup Authentication Flow', () => {
     fireEvent.change(passwordInput, { target: { value: '12345' } }); // Too short
     fireEvent.click(submitButton);
 
+    // Should show inline error message instead of toast
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith('Password must be at least 6 characters');
+      expect(screen.getByText('Password must be at least 6 characters')).toBeDefined();
     });
   });
 
@@ -278,8 +277,6 @@ describe('Signup Authentication Flow', () => {
    * Validates: Requirements 7.5
    */
   it('should display error for missing name field', async () => {
-    const { toast } = await import('sonner');
-
     render(
       <BrowserRouter>
         <Signup />
@@ -289,18 +286,17 @@ describe('Signup Authentication Flow', () => {
     const nameInput = screen.getByLabelText(/full name/i) as HTMLInputElement;
     const emailInput = screen.getByLabelText(/email/i) as HTMLInputElement;
     const passwordInput = screen.getByLabelText(/password/i) as HTMLInputElement;
-    const form = nameInput.closest('form') as HTMLFormElement;
+    const submitButton = screen.getByRole('button', { name: /create account/i });
 
     // Set values - name is whitespace only
     fireEvent.change(nameInput, { target: { value: '   ' } });
     fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
     fireEvent.change(passwordInput, { target: { value: 'password123' } });
-    
-    // Submit form directly to bypass HTML5 validation
-    fireEvent.submit(form);
+    fireEvent.click(submitButton);
 
+    // Should show inline error message instead of toast
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith('Please enter your name');
+      expect(screen.getByText('Name is required')).toBeDefined();
     });
   });
 
@@ -308,9 +304,7 @@ describe('Signup Authentication Flow', () => {
    * Feature: production-auth-cleanup, Test: Missing field validation - email
    * Validates: Requirements 7.5
    */
-  it('should display error for missing email field', async () => {
-    const { toast } = await import('sonner');
-
+  it('should display error for invalid email format', async () => {
     render(
       <BrowserRouter>
         <Signup />
@@ -323,15 +317,16 @@ describe('Signup Authentication Flow', () => {
     const form = nameInput.closest('form') as HTMLFormElement;
 
     fireEvent.change(nameInput, { target: { value: 'Test User' } });
-    // Set email to whitespace only
-    fireEvent.change(emailInput, { target: { value: '   ' } });
+    // Use invalid email format that passes HTML5 but fails our regex
+    fireEvent.change(emailInput, { target: { value: 'test@' } });
     fireEvent.change(passwordInput, { target: { value: 'password123' } });
     
-    // Submit form directly to bypass HTML5 validation
+    // Submit form directly
     fireEvent.submit(form);
 
+    // Should show inline error message for invalid email
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith('Please enter your email');
+      expect(screen.getByText('Please enter a valid email address')).toBeDefined();
     });
   });
 });
