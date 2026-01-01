@@ -22,7 +22,6 @@ import { toast } from 'sonner';
 import { useState } from 'react';
 import { useVoiceReminder } from '@/hooks/useVoiceReminder';
 import integrations from '@/services/integrations';
-import { DemoDataManager } from '@/components/demo/DemoDataManager';
 
 export const Settings = () => {
   const { 
@@ -205,9 +204,6 @@ export const Settings = () => {
             )}
           </CardContent>
         </Card>
-
-        {/* Demo Data Manager */}
-        <DemoDataManager />
 
         {/* Notifications */}
         <Card className="shadow-soft">

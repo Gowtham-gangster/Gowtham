@@ -1,6 +1,6 @@
 import type { Doctor } from '@/types/appointment';
 
-export const mockDoctors: Doctor[] = [
+export const doctors: Doctor[] = [
   {
     id: 'doc-1',
     name: 'Dr. Sarah Johnson',

@@ -17,7 +17,7 @@ export interface User {
     orderNotifications: boolean;
     emailEnabled: boolean;
   };
-  // Additional fields for demo data
+  // Optional user profile fields
   age?: number;
   phone?: string;
   address?: string;
@@ -46,7 +46,7 @@ export interface Medicine {
   instructions?: string;
   createdAt: string;
   updatedAt?: string;
-  // Additional fields for demo data
+  // Optional medicine metadata fields
   frequency?: {
     type: FrequencyType;
     timesPerDay?: number;

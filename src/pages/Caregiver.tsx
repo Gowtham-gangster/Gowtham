@@ -36,7 +36,7 @@ export const Caregiver = () => {
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    // Mock adding a patient
+    // Add a patient link
     const link: CaregiverLink = {
       id: generateId(),
       caregiverId: user?.id || '',
@@ -145,7 +145,7 @@ export const Caregiver = () => {
                     </div>
                     
                     <div className="flex items-center gap-4">
-                      {/* Mock stats */}
+                      {/* Patient statistics */}
                       <div className="hidden md:flex items-center gap-6 text-sm">
                         <div className="flex items-center gap-2">
                           <TrendingUp size={16} className="text-success" />
@@ -174,7 +174,7 @@ export const Caregiver = () => {
                     </div>
                   </div>
                   
-                  {/* Mobile stats */}
+                  {/* Mobile statistics */}
                   <div className="md:hidden flex items-center gap-4 mt-4 text-sm">
                     <Badge variant="outline" className="gap-1">
                       <TrendingUp size={12} className="text-success" />

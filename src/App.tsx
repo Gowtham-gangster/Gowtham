@@ -4,9 +4,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useStore } from "@/store/useStore";
-import { useEffect } from "react";
-import { autoInitializeDemoData } from "@/services/demo-data-service";
-import { localAuthService } from "@/services/local-auth-service";
+import { useEffect, useState } from "react";
+import { authService } from "@/services/api/auth-service";
+import api from "@/lib/api-client";
 
 // Pages
 import Landing from "./pages/Landing";
@@ -30,6 +30,16 @@ import ChronicDiseases from "./pages/ChronicDiseases";
 
 const queryClient = new QueryClient();
 
+// Loading component for auth check
+const AuthLoading = () => (
+  <div className="min-h-screen bg-background flex items-center justify-center">
+    <div className="text-center">
+      <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+      <p className="text-muted-foreground">Loading...</p>
+    </div>
+  </div>
+);
+
 // Protected Route wrapper
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const isAuthenticated = useStore((state) => state.isAuthenticated);
@@ -41,10 +51,16 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-// Public Route wrapper (redirects to dashboard if already logged in)
-const PublicRoute = ({ children }: { children: React.ReactNode }) => {
+// Public Route wrapper (only redirects from login/signup if already logged in)
+const PublicRoute = ({ children, isLanding = false }: { children: React.ReactNode; isLanding?: boolean }) => {
   const isAuthenticated = useStore((state) => state.isAuthenticated);
   
+  // Allow landing page to be viewed even when authenticated
+  if (isLanding) {
+    return <>{children}</>;
+  }
+  
+  // Redirect to dashboard if trying to access login/signup while authenticated
   if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />;
   }
@@ -55,19 +71,37 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
 const App = () => {
   const elderlyMode = useStore((state) => state.elderlyMode);
   const login = useStore((state) => state.login);
+  const [authChecked, setAuthChecked] = useState(false);
   
-  // Restore session from local storage on app load
+  // Check for existing JWT token on app load and restore session if valid
   useEffect(() => {
-    const user = localAuthService.getCurrentUser();
-    if (user) {
-      login(user);
-    }
+    const checkAuth = async () => {
+      const token = api.getAuthToken();
+      
+      // Always attempt to restore valid sessions
+      if (token) {
+        try {
+          // Verify token is still valid by fetching current user
+          const response = await authService.getCurrentUser();
+          // Cast to User type since normalizeUser ensures all required fields
+          login(response.user as any);
+        } catch (error) {
+          // Token is invalid or expired, clear it
+          console.error('Session expired or invalid:', error);
+          api.clearAuthToken();
+        }
+      }
+      
+      setAuthChecked(true);
+    };
+    
+    checkAuth();
   }, [login]);
   
-  // Auto-initialize demo data on first load
-  useEffect(() => {
-    autoInitializeDemoData();
-  }, []);
+  // Show loading screen while checking authentication
+  if (!authChecked) {
+    return <AuthLoading />;
+  }
   
   return (
     <QueryClientProvider client={queryClient}>
@@ -78,7 +112,7 @@ const App = () => {
           <BrowserRouter>
             <Routes>
               {/* Public routes */}
-              <Route path="/" element={<PublicRoute><Landing /></PublicRoute>} />
+              <Route path="/" element={<PublicRoute isLanding={true}><Landing /></PublicRoute>} />
               <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
               <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
               

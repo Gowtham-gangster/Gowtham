@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useStore } from '@/store/useStore';
-import { localAuthService } from '@/services/local-auth-service';
+import { authService } from '@/services/api/auth-service';
 import { Pill, Loader2, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -21,10 +21,11 @@ export const Login = () => {
     setLoading(true);
 
     try {
-      // Use local auth service
-      const user = await localAuthService.signIn(email, password);
-      login(user);
-      toast.success(`Welcome back, ${user.name}!`);
+      const response = await authService.login({ email, password });
+      // Set flag to allow session restoration on future page loads
+      sessionStorage.setItem('restore_session', 'true');
+      await login(response.user as any);
+      toast.success(`Welcome back, ${response.user.name}!`);
       navigate('/dashboard');
     } catch (error: any) {
       console.error('Login error:', error);

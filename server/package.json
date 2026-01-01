@@ -1,17 +1,33 @@
 {
-  "name": "med-minder-pro-server",
-  "version": "0.1.0",
-  "private": true,
-  "main": "index.js",
+  "name": "medreminder-backend",
+  "version": "1.0.0",
+  "description": "MedReminder Pro Backend API",
+  "main": "server.js",
+  "type": "module",
   "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js"
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node --test"
   },
+  "keywords": [
+    "medicine",
+    "reminder",
+    "healthcare",
+    "api"
+  ],
+  "author": "",
+  "license": "MIT",
   "dependencies": {
-    "body-parser": "^1.20.2",
+    "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
-    "node-fetch": "^2.6.7"
+    "express-validator": "^7.0.1",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.6.5",
+    "uuid": "^13.0.0"
+  },
+  "devDependencies": {
+    "fast-check": "^3.15.0"
   }
 }

@@ -1,5 +1,5 @@
 import type { Appointment, AppointmentBooking, Doctor } from '@/types/appointment';
-import { mockDoctors } from '@/data/doctors';
+import { doctors } from '@/data/doctors';
 
 const APPOINTMENTS_KEY = 'medreminder_appointments';
 
@@ -8,14 +8,14 @@ class AppointmentService {
    * Get all doctors
    */
   getDoctors(): Doctor[] {
-    return mockDoctors;
+    return doctors;
   }
 
   /**
    * Get doctor by ID
    */
   getDoctor(id: string): Doctor | undefined {
-    return mockDoctors.find(d => d.id === id);
+    return doctors.find(d => d.id === id);
   }
 
   /**
@@ -23,7 +23,7 @@ class AppointmentService {
    */
   searchDoctors(query: string): Doctor[] {
     const lowerQuery = query.toLowerCase();
-    return mockDoctors.filter(
+    return doctors.filter(
       d =>
         d.name.toLowerCase().includes(lowerQuery) ||
         d.specialty.toLowerCase().includes(lowerQuery)

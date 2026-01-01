@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useStore } from '@/store/useStore';
-import { localAuthService } from '@/services/local-auth-service';
+import { authService } from '@/services/api/auth-service';
 import { Pill, Loader2, ArrowLeft, User, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -44,28 +44,21 @@ export const Signup = () => {
         return;
       }
 
-      // Use local auth service - instant signup, no email verification
-      const user = await localAuthService.signUp({
+      const response = await authService.signup({
         email: email.trim(),
         password,
         name: name.trim(),
         role,
       });
       
-      login(user);
-      toast.success(`Welcome, ${user.name}! Your account has been created.`);
+      // Set flag to allow session restoration on future page loads
+      sessionStorage.setItem('restore_session', 'true');
+      await login(response.user);
+      toast.success(`Welcome, ${response.user.name}! Your account has been created.`);
       navigate('/dashboard');
     } catch (error: any) {
       console.error('Signup error:', error);
-      
-      // Display user-friendly error message
-      const errorMessage = error?.getUserMessage?.() || error?.message || 'Something went wrong. Please try again.';
-      toast.error(errorMessage);
-      
-      // Log detailed error for debugging
-      if (error?.code) {
-        console.error('Error code:', error.code);
-      }
+      toast.error(error?.message || 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }

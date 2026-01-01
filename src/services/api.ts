@@ -1,80 +1,12 @@
 import { Medicine, Schedule, DoseLog, User, Prescription, ParsedMedicine } from '@/types';
 import Tesseract from 'tesseract.js';
 
-// Simulated API delay
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
 // Generate unique IDs
 export const generateId = () => Math.random().toString(36).substr(2, 9);
 
 // Generate invite code
 export const generateInviteCode = () => {
   return Math.random().toString(36).substr(2, 8).toUpperCase();
-};
-
-// Mock user authentication
-export const mockLogin = async (email: string, password: string): Promise<User> => {
-  await delay(500);
-  
-  // Simulate authentication
-  if (!email || !password) {
-    throw new Error('Email and password are required');
-  }
-  
-  const user: User = {
-    id: generateId(),
-    name: email.split('@')[0],
-    email,
-    role: 'PATIENT',
-    elderlyMode: false,
-    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    caregiverInviteCode: generateInviteCode(),
-    voiceRemindersEnabled: true,
-    notificationsEnabled: true,
-    notificationSettings: {
-      doseReminders: true,
-      missedDoseAlerts: true,
-      refillWarnings: true,
-      orderNotifications: true,
-      emailEnabled: true
-    }
-  };
-  
-  return user;
-};
-
-export const mockSignup = async (
-  name: string, 
-  email: string, 
-  password: string, 
-  role: 'PATIENT' | 'CAREGIVER'
-): Promise<User> => {
-  await delay(500);
-  
-  if (!name || !email || !password) {
-    throw new Error('All fields are required');
-  }
-  
-  const user: User = {
-    id: generateId(),
-    name,
-    email,
-    role,
-    elderlyMode: false,
-    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    caregiverInviteCode: role === 'PATIENT' ? generateInviteCode() : undefined,
-    voiceRemindersEnabled: true,
-    notificationsEnabled: true,
-    notificationSettings: {
-      doseReminders: true,
-      missedDoseAlerts: true,
-      refillWarnings: true,
-      orderNotifications: true,
-      emailEnabled: true
-    }
-  };
-  
-  return user;
 };
 
 // Prescription parsing using tesseract.js OCR
